@@ -1,0 +1,330 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "edited_message",
+          "channel_post",
+          "edited_channel_post",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        96
+      ],
+      "id": "75a2cac7-3e0c-4f51-812d-5b9e72af89e6",
+      "name": "Telegram Trigger",
+      "webhookId": "4823aefa-4df3-40f8-93ea-cf49c7a666f3",
+      "credentials": {
+        "telegramApi": {
+          "id": "TKuMAWCwgHMVdXVI",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3a16ac4-1d35-4493-b189-0f6d8524d945",
+              "name": "queue",
+              "value": "={{ $json.message.text.toLowerCase().trim().normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\") }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        96
+      ],
+      "id": "93018286-a209-41f0-9bfb-a0974d3aaaca",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openWeatherMapApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.queue }}"
+            },
+            {
+              "name": "units",
+              "value": "metric"
+            },
+            {
+              "name": "lang",
+              "value": "pt_br"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        448,
+        96
+      ],
+      "id": "7c279924-6ef0-4fda-9277-4a27bba88e1a",
+      "name": "HTTP Request",
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "cwQ4F7yLp5URPLk9",
+          "name": "OpenWeatherMap account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9c577fb9-a98f-40fe-b267-1319b594bb02",
+              "leftValue": "={{ $json.cod }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        96
+      ],
+      "id": "0225a1f8-2781-4b58-9864-2ef30359e98f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=Clima em {{ $json.name }} é de {{ $json.main.temp }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "ae95beab-c423-4b81-af14-386cd873bf6a",
+      "name": "Send Weather Info",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        192
+      ],
+      "webhookId": "95473c05-86fc-4457-87b5-0d72acd0f787",
+      "credentials": {
+        "telegramApi": {
+          "id": "TKuMAWCwgHMVdXVI",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "9874961d-6588-4608-a16d-2a1a554d1b4d",
+      "name": "Verify City Name",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        0,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=⚠️ Cidade \"{{ $('Edit Fields').item.json.queue }}\" não encontrada.\n\nMostrando resultado para a cidade mais próxima encontrada.\n\nSe quiser outra cidade, tente:\n• Nome completo (ex: \"Juazeiro do Norte\")\n• Apenas a cidade principal da região",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "36830e25-ccca-42e0-9f06-03be4b6a4a3b",
+      "name": "Send Wrong City Warning",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        304
+      ],
+      "webhookId": "6e179da7-d0dd-4976-b56a-8ac3664a748b",
+      "credentials": {
+        "telegramApi": {
+          "id": "TKuMAWCwgHMVdXVI",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "❌ Cidade não encontrada.\n\n💡 Dicas:\n• Verifique a ortografia\n• Tente apenas o nome da cidade (ex: \"Fortaleza\" em vez de \"Fortaleza-CE\")\n• Para cidades pequenas, tente a cidade maior mais próxima\n\nExemplos: Fortaleza, São Paulo, Rio de Janeiro",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        0
+      ],
+      "id": "773d15b2-d279-43c4-a802-0f5f331f58f1",
+      "name": "Send Error Message",
+      "webhookId": "20ec1a63-5437-499d-a18a-b19a22eccb8d",
+      "credentials": {
+        "telegramApi": {
+          "id": "TKuMAWCwgHMVdXVI",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Verify City Name",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Weather Info": {
+      "main": [
+        []
+      ]
+    },
+    "Verify City Name": {
+      "main": [
+        [
+          {
+            "node": "Send Weather Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Wrong City Warning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Wrong City Warning": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "83eac28f-a4bd-491a-b277-d88ec9816044",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "51b877e9212a8cfe3075500c86bf88fdbb37d1957dc107d61107915e2afb29ad"
+  },
+  "id": "0zqsVsc8EB8PZc9d",
+  "tags": []
+}
