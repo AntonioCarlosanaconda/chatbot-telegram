@@ -1,0 +1,26 @@
+Projeto: Bot de Clima no Telegram
+Desenvolvi este chatbot para automatizar a consulta de condições climáticas em cidades brasileiras. O sistema utiliza a plataforma n8n como motor de integração, conectando mensagens recebidas via Telegram à base de dados da API OpenWeather.
+
+O objetivo principal foi criar uma ferramenta que processe nomes de cidades de forma inteligente, tratando variações de digitação para entregar a temperatura exata ao usuário.
+
+Como Executar o Projeto
+Para replicar este workflow no seu ambiente, siga os passos abaixo:
+
+Importação: No seu painel do n8n, crie um novo fluxo de trabalho e utilize a opção de importar arquivo para carregar o documento workflow-chatbot-telegram.json.
+
+Configuração de Credenciais: O projeto depende de chaves de acesso pessoais para funcionar. Você deve inserir suas próprias credenciais nos seguintes campos:
+
+Telegram: Insira o TELEGRAM_BOT_TOKEN gerado pelo BotFather.
+
+OpenWeather: Insira a OPENWEATHER_API_KEY gerada na sua conta oficial do OpenWeather.
+
+Ativação: Com as chaves configuradas, salve o fluxo e clique em publicar ou executar para que o bot passe a responder às mensagens em tempo real.
+
+Funcionamento do Workflow
+O fluxo foi desenhado para ser robusto e evitar falhas comuns de busca:
+
+Entrada: O sistema fica em espera até receber o nome de uma cidade, como "Acopiara", enviado por um usuário no Telegram.
+
+Processamento: Implementei uma etapa de normalização que limpa o texto, removendo acentos, espaços desnecessários e padronizando a caixa das letras. Isso garante que a API identifique a cidade corretamente, independentemente de como o usuário a escreveu.
+
+Saída: Após a consulta, o bot extrai apenas a temperatura arredondada e a envia em uma mensagem formatada. Se a cidade não for reconhecida pela API, o fluxo desvia para uma mensagem de erro que orienta o usuário sobre como realizar uma nova busca.
